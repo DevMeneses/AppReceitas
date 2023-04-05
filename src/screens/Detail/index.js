@@ -1,32 +1,132 @@
-import { useLayoutEffect } from "react";
-
-import { View, Text, Pressable } from "react-native";
-import { styles } from "./styles";
-
+import { useLayoutEffect, useState } from "react";
 import { useRoute, useNavigation } from "@react-navigation/native";
 
-import { Entypo } from '@expo/vector-icons'
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Image,
+  Modal,
+  Share,
+} from "react-native";
+import { styles } from "./styles";
+
+import { Entypo, AntDesign, Feather } from "@expo/vector-icons";
+
+import Ingredients from "../../components/Ingredients";
+import Instructions from "../../components/instructions";
+import Video from "../../components/Video";
+
+import {
+  isFavorite,
+  saveFavorites,
+  removeFavorites,
+} from "../../utils/storage";
 
 export default function Detail() {
   const route = useRoute();
   const navigation = useNavigation();
 
-  useLayoutEffect(() => {
-   
-    navigation.setOptions({
-        title: route.params?.data ? route.params?.data.name : "Detalhes da receita",
-        headerRight: () => (
-            <Pressable onPress={ () => console.log("Teste")}>
-            <Entypo name="heart" color='#ff4141' size={28}/>
-            </Pressable>
-        )
-    })
+  const [showVideo, setShowVideo] = useState(false);
+  const [favorite, setFavorite] = useState(false);
 
-  }, [navigation, route.params?.data])
+  useLayoutEffect(() => {
+    async function getStatusFavorites() {
+      const receipeFavorite = await isFavorite(route.params?.data);
+      setFavorite(receipeFavorite);
+    }
+
+    getStatusFavorites;
+
+    navigation.setOptions({
+      title: route.params?.data
+        ? route.params?.data.name
+        : "Detalhes da receita",
+      headerRight: () => (
+        <Pressable onPress={() => handleFavoriteReceipe(route.params?.data)}>
+          {favorite ? (
+            <Entypo name="heart" color="#FF4141" size={28} />
+          ) : (
+            <Entypo name="heart-outlined" color="#FF4141" size={28} />
+          )}
+        </Pressable>
+      ),
+    });
+  }, [navigation, route.params?.data, favorite]);
+
+  async function handleFavoriteReceipe(receipe) {
+    if (favorite) {
+      await removeFavorites(receipe.id);
+      setFavorite(false);
+    } else {
+      await saveFavorites("@appreceitas", receipe);
+      setFavorite(true);
+    }
+  }
+
+  function handleOpenVideo() {
+    setShowVideo(true);
+  }
+
+  async function handleShare() {
+    try {
+      await Share.share({
+        url: "https://sujeitoprogramador.com",
+        message: `Receita: ${route.params?.data.name}\nIngredientes: ${route.params?.data.total_ingredients}\nVi lá no app Receita fácil`,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   return (
-    <View>
-      <Text>{route.params?.data.name}</Text>
-    </View>
+    <ScrollView
+      contentContainerStyle={{ paddingBottom: 14 }}
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+    >
+      <Pressable onPress={handleOpenVideo}>
+        <View style={styles.playIcon}>
+          <AntDesign name="playcircleo" size={48} color="#FAFAFA" />
+        </View>
+        <Image
+          style={styles.cover}
+          source={{ uri: route.params?.data.cover }}
+        />
+      </Pressable>
+
+      <View style={styles.headerDetails}>
+        <View>
+          <Text style={styles.title}>{route.params?.data.name}</Text>
+          <Text style={styles.ingredientsText}>
+            Ingredientes ({route.params?.data.total_ingredients})
+          </Text>
+        </View>
+        <Pressable onPress={handleShare}>
+          <Feather name="share-2" size={24} color="#121212" />
+        </Pressable>
+      </View>
+
+      {route.params?.data.ingredients.map((item) => (
+        <Ingredients key={item.id} data={item} />
+      ))}
+
+      <View style={styles.InstructionsArea}>
+        <Text style={styles.instructionsText}>Modo de preparo</Text>
+        <Feather name="arrow-down" size={24} color="#FFF" />
+      </View>
+
+      {route.params?.data.instructions.map((item, index) => (
+        <Instructions key={item.id} data={item} index={index} />
+      ))}
+
+      <Modal visible={showVideo} animationType="slide">
+        <Video
+          handleClose={() => setShowVideo(false)}
+          videoUrl={route.params?.data.video}
+        />
+      </Modal>
+    </ScrollView>
   );
 }

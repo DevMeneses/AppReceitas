@@ -30,6 +30,6 @@ export const styles = StyleSheet.create({
   input:{
     width: '90%',
     height: 54,
-    maxWidth: '90%'
+    maxWidth: '90%',
   }
 });

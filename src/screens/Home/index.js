@@ -4,7 +4,8 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  FlatList
+  FlatList,
+  Alert
 } from "react-native";
 
 import { Ionicons } from "@expo/vector-icons";
@@ -17,9 +18,15 @@ import { useState, useEffect } from "react";
 import api from "../../services/api.js";
 import FoodList from '../../components/FoodList'
 
+import { useNavigation } from '@react-navigation/native'
+
+import { Text as MotiText } from 'moti'
+
 export default function Home() {
   const [inputValue, SetInputValue] = useState("");
   const [foods, setFoods] = useState([]);
+
+  const navigation = useNavigation();
 
   useEffect(() => {
     async function fetchApi() {
@@ -31,15 +38,49 @@ export default function Home() {
   }, []);
 
   function handleSearch() {
-    console.log("Clicou");
+    if(!inputValue) return;
+
+    let input = inputValue;
+    SetInputValue("")
+    navigation.navigate("Search", { name: input })
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <Logo />
 
-      <Text style={styles.title}>Encontre a receita</Text>
-      <Text style={styles.title}>que combina com você</Text>
+      <MotiText 
+      style={styles.title}
+      from={{
+        opacity: 0,
+        translateY: 18,
+      }}
+      animate={{
+        opacity: 1,
+        translateY: 0
+      }}
+      transition={{
+        delay: 100,
+        type: "timing",
+        duration: 650
+      }}
+      >Encontre a receita</MotiText>
+      <MotiText  
+      style={styles.title}
+      from={{
+        opacity: 0,
+        translateY: 18,
+      }}
+      animate={{
+        opacity: 1,
+        translateY: 0
+      }}
+      transition={{
+        delay: 200,
+        type: "timing",
+        duration: 850
+      }} 
+      >que combina com você</MotiText>
 
       <View style={styles.form}>
         <TextInput
